@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Roma 2026 · Familia Nestor</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#6B4A35; --bg-mid:#8A6347; --bg-light:#A67C5B;
+  --orange:#C99662; --amber:#E0BD8E;
+  --white:#FFFFFF; --card:#FFFFFF; --notes:#FBF5EE; --banner:#F5E9DA;
+  --ink:#1C1E24; --muted:#6B7280; --border:#E5D5C5;
+  --day1:#C99662; --day2:#8A6347; --day3:#B17A4E; --day4:#7D9474; --day5:#A67C5B;
+  --radius:10px; --accent:var(--day1);
+  --ff:"Archivo",sans-serif; --fm:"IBM Plex Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg);}
+body{color:var(--white);font-family:var(--ff);-webkit-font-smoothing:antialiased;padding-bottom:2rem;max-width:600px;margin:0 auto;}
+
+/* ── PORTADA ── */
+.cover{background:var(--bg);padding:0;}
+.cover-band{background:var(--bg-mid);padding:.55rem 1.3rem;}
+.cover-band p{font-family:var(--fm);font-size:.65rem;letter-spacing:.18em;color:var(--amber);text-transform:uppercase;}
+.cover-title{background:var(--bg);padding:1.1rem 1.3rem .4rem;}
+.cover-title h1{font-size:3.6rem;font-weight:700;color:var(--white);line-height:1.05;letter-spacing:-.02em;}
+.cover-sub{background:var(--bg-mid);padding:.55rem 1.3rem;}
+.cover-sub p{font-size:1rem;color:var(--amber);font-weight:600;}
+.cover-dates{background:var(--bg);padding:.7rem 1.3rem;}
+.cover-dates p{font-size:1.1rem;font-weight:700;color:var(--white);letter-spacing:.04em;}
+.cover-loc{background:var(--bg-light);padding:.5rem 1.3rem;}
+.cover-loc p{font-size:.82rem;color:var(--white);}
+.cover-route-label{background:var(--bg);padding:.45rem 1.3rem 0;}
+.cover-route-label p{font-family:var(--fm);font-size:.65rem;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;}
+.cover-route{background:var(--bg-mid);padding:.55rem 1.3rem;}
+.cover-route p{font-size:.85rem;font-weight:700;color:var(--white);}
+.cover-info{background:var(--bg);padding:.6rem 1.3rem 0;}
+.info-row{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.1);padding:.55rem 0;}
+.info-row:last-child{border-bottom:none;}
+.info-label{font-family:var(--fm);font-size:.7rem;color:var(--orange);font-weight:600;min-width:5.5rem;padding-top:.05rem;}
+.info-val{font-size:.82rem;color:var(--white);line-height:1.45;}
+.cover-note{background:var(--bg);padding:.9rem 1.3rem 1.2rem;text-align:center;}
+.cover-note p{font-size:.72rem;color:rgba(255,255,255,.45);font-family:var(--fm);}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:.4rem;padding:.6rem .9rem;overflow-x:auto;background:var(--bg-mid);position:sticky;top:0;z-index:30;scrollbar-width:none;border-bottom:3px solid var(--bg);}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex:0 0 auto;display:flex;align-items:center;gap:.35rem;padding:.42rem .75rem;border-radius:999px;border:1.5px solid var(--tab-color);background:transparent;color:var(--white);font-family:var(--ff);font-weight:600;font-size:.78rem;cursor:pointer;transition:background .15s;}
+.tab .num{width:1.25rem;height:1.25rem;border-radius:50%;background:var(--tab-color);color:var(--white);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:.7rem;font-weight:700;}
+.tab.active{background:var(--tab-color);}
+.tab.active .num{background:rgba(0,0,0,.25);}
+
+/* ── DAY HEADER ── */
+.day-label{background:var(--bg-mid);padding:.42rem 1.1rem;text-align:center;}
+.day-label p{font-family:var(--fm);font-size:.68rem;letter-spacing:.12em;color:var(--amber);text-transform:uppercase;}
+.day-title-block{background:var(--bg);padding:.8rem 1.1rem .3rem;border-bottom:4px solid var(--accent);}
+.day-title-block h2{font-size:1.85rem;font-weight:700;color:var(--white);line-height:1.15;}
+.day-subtitle{background:var(--bg);padding:.25rem 1.1rem .75rem;}
+.day-subtitle p{font-size:.9rem;color:var(--amber);}
+.banner{margin:.0rem .9rem .6rem;padding:.65rem .9rem .65rem 1rem;background:var(--banner);color:var(--ink);border-radius:var(--radius);border-left:4px solid var(--accent);font-size:.85rem;font-weight:600;line-height:1.4;}
+
+/* ── MAPA ── */
+#map{height:36vh;min-height:200px;margin:.0rem .9rem .7rem;border-radius:var(--radius);border:2px solid var(--accent);overflow:hidden;}
+
+/* ── PARADAS ── */
+.schedule{padding:.0 .9rem;display:flex;flex-direction:column;gap:.6rem;}
+.stop{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+.stop-header{display:grid;grid-template-columns:2.6rem 1fr;align-items:start;}
+.stop-num{display:flex;align-items:center;justify-content:center;background:var(--accent);min-height:2.6rem;font-family:var(--fm);font-weight:700;font-size:.95rem;color:var(--white);}
+.stop-meta{padding:.55rem .8rem .35rem;}
+.stop-time{font-family:var(--fm);font-size:.72rem;color:var(--orange);font-weight:600;letter-spacing:.04em;}
+.stop-title{font-size:1rem;font-weight:700;color:var(--ink);line-height:1.25;margin:.07rem 0 .12rem;}
+.stop-addr{font-size:.73rem;color:var(--muted);}
+.stop-notes{padding:.5rem .8rem .55rem 2.6rem;background:var(--notes);font-size:.85rem;color:var(--ink);line-height:1.45;border-left:3px solid var(--accent);}
+.stop-detail{padding:.55rem .8rem .0;}
+.detail-section{margin-bottom:.45rem;}
+.detail-title{font-family:var(--fm);font-size:.68rem;letter-spacing:.1em;color:var(--orange);font-weight:600;text-transform:uppercase;margin-bottom:.18rem;}
+.detail-text{font-size:.83rem;color:var(--ink);line-height:1.48;}
+.stop-footer{padding:.45rem .8rem .55rem;display:flex;gap:.6rem;align-items:center;border-top:1px solid var(--border);}
+.btn-go{display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem;font-weight:700;color:var(--bg);text-decoration:none;border-bottom:1.5px solid var(--orange);}
+.stop.special .stop-num{background:linear-gradient(135deg,#8A6347,#C99662);}
+.stop.special .stop-notes{border-left-color:#8A6347;background:#FBF3E8;}
+.sparkle{display:inline-block;animation:twinkle 1.8s ease-in-out infinite;}
+.sparkle:nth-of-type(2){animation-delay:.5s;}
+@keyframes twinkle{0%,100%{opacity:.3;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+
+/* ── BLOCK SEPARATOR ── */
+.block-sep{margin:.9rem .9rem .3rem;padding:.4rem .8rem;background:rgba(255,255,255,.08);border-radius:999px;text-align:center;}
+.block-sep p{font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;color:var(--amber);text-transform:uppercase;}
+
+/* ── LMARKERS ── */
+.lmarker{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--fm);font-weight:700;font-size:.75rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);}
+.lmarker.home{background:#fff;color:var(--bg);border-color:var(--amber);}
+.leaflet-popup-content{font-family:var(--ff);font-size:.8rem;line-height:1.4;}
+.leaflet-popup-content a{color:var(--bg);font-weight:700;}
+
+/* ── PRACTICAL INFO ── */
+.practical{margin-top:1.2rem;}
+.practical-title{background:var(--bg-mid);padding:.7rem 1.1rem;text-align:center;}
+.practical-title p{font-family:var(--fm);font-size:.72rem;letter-spacing:.12em;color:var(--amber);text-transform:uppercase;font-weight:700;}
+.tips{padding:.8rem .9rem 0;}
+.tip-item{margin-bottom:.6rem;}
+.tip-title{font-family:var(--fm);font-size:.7rem;letter-spacing:.1em;color:var(--orange);font-weight:600;text-transform:uppercase;margin-bottom:.18rem;}
+.tip-text{font-size:.85rem;color:var(--white);line-height:1.48;}
+.tip-divider{border:none;border-top:1px solid rgba(255,255,255,.15);margin:.6rem 0;}
+
+/* ── FOOTER ── */
+footer{background:var(--bg-mid);padding:.75rem 1.1rem;text-align:center;font-family:var(--fm);font-size:.65rem;color:rgba(255,255,255,.5);line-height:1.6;margin-top:.9rem;}
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="cover" id="cover">
+  <div class="cover-band"><p>ROMA 2026 · JORGE &amp; FAMILIA</p></div>
+  <div class="cover-title"><h1>ROMA</h1></div>
+  <div class="cover-sub"><p>Jorge &amp; familia &nbsp;·&nbsp; 5 personas</p></div>
+  <div class="cover-dates"><p>18 — 22 JULIO 2026</p></div>
+  <div class="cover-loc"><p>Via del Castro Pretorio 24 · cerca de Roma Termini</p></div>
+  <div class="cover-route-label"><p>RUTA DEL VIAJE</p></div>
+  <div class="cover-route"><p>✈ BUE &nbsp;→&nbsp; ✈ PARIS &nbsp;→&nbsp; ▶ LONDRES &nbsp;→&nbsp; ✈ ROMA &nbsp;→&nbsp; 🚄 FIRENZE &nbsp;→&nbsp; ✈ MADRID</p></div>
+  <div class="cover-info">
+    <div class="info-row"><span class="info-label">▪ DEPTO</span><span class="info-val">Via del Castro Pretorio 24<br>Roma, a 10 min de Termini</span></div>
+    <div class="info-row"><span class="info-label">✈ LLEGADA</span><span class="info-val">Vuelo BA — Heathrow 18:55 → Roma 22:25<br>Sábado 18/7 · Leonardo Express a Termini</span></div>
+    <div class="info-row"><span class="info-label">🚄 PARTIDA</span><span class="info-val">Frecciarossa/Italo 22/7 — 12:00h<br>Sale desde Roma TIBURTINA, no Termini</span></div>
+  </div>
+  <div class="cover-note"><p>Itinerario preparado con Claude AI · Familia Nestor 2026</p></div>
+</div>
+
+<!-- TABS -->
+<nav class="tabs" id="tabs"></nav>
+
+<!-- CONTENIDO DEL DIA -->
+<div id="day-content"></div>
+
+<!-- MAPA -->
+<div id="map"></div>
+
+<!-- SCHEDULE -->
+<main class="schedule" id="schedule"></main>
+
+<!-- PRACTICAL INFO (solo visible en el ultimo "tab" virtual, se agrega al final del dia 5) -->
+<div class="practical" id="practical"></div>
+
+<footer>
+  Via del Castro Pretorio 24, Roma &nbsp;·&nbsp; Tren a Firenze 22/7 · 12:00h desde Tiburtina &nbsp;·&nbsp; 18–22 Jul 2026<br>
+  🧭 "Cómo llegar" abre Google Maps caminando desde la parada anterior
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin=""></script>
+<script>
+const HOME={lat:41.9016375,lng:12.5053,name:"Via del Castro Pretorio 24 (depto)"};
+
+const DAYS=[
+  {id:1,date:"Sáb 18/7",title:"Llegada a Roma",subtitle:"Leonardo Express + primera noche en San Lorenzo",color:"#C99662",
+   banner:"✈️ Vuelo BA desde Heathrow 18:55, llega a Fiumicino 22:25. Leonardo Express cada 15 min, último tren ~23:53. Llegan al depto cerca de medianoche.",
+   stops:[
+    {time:"22:25",title:"Llegada — Aeropuerto Fiumicino",address:"Fiumicino, Roma (FCO)",notes:"Sumar 30-40 min para migración y equipaje. La estación del Leonardo Express está dentro del aeropuerto, frente a la T3 — 7 min caminando. Ticket: 14€/persona o 40€ minigrupo (4 pax).",lat:41.7936718,lng:12.2516675},
+    {time:"~23:10",title:"Leonardo Express → Roma Termini",address:"Fiumicino Aeroporto → Roma Termini",notes:"Tren directo sin paradas, 32 minutos. Llegan a Termini alrededor de las 23:42. Sale cada 15 min, último tren ~23:53.",lat:41.9012873,lng:12.5015756},
+    {time:"~23:45",title:"Check-in — Via del Castro Pretorio 24",address:"Via del Castro Pretorio 24, Roma",notes:"10-12 min caminando desde Termini por Via Volturno. Para 5 personas con equipaje pesado, el bus 90 desde Termini llega en 4 minutos.",lat:41.9016375,lng:12.5053},
+    {time:"00:00",title:"Cena — Barrio San Lorenzo",address:"Via Tiburtina y alrededores, Roma",notes:"Barrio universitario detrás de Termini: pizzerías abiertas hasta la madrugada, bares con música, ambiente 100% local sin turistas. Pizzeria Mino (Via Milazzo 18) abre hasta las 00:00 — buena pasta y pizza clásica.",lat:41.9020838,lng:12.5044031}
+  ]},
+  {id:2,date:"Dom 19/7",title:"Vaticano",subtitle:"Ángelus papal + shopping nocturno + Trevi de noche",color:"#8A6347",
+   banner:"🕊️ Día dividido en dos bloques con siesta. Mañana intensa en el Vaticano (Ángelus 12:00 en punto). Tarde-noche: shopping, calles mágicas y Trevi de noche.",
+   stops:[
+    {time:"09:30",title:"Llegada — Plaza San Pedro",address:"Piazza San Pietro, Vaticano",notes:"Metro Línea A: Termini → Ottaviano-San Pietro (4 paradas, ~12 min) + 8-10 min caminando. La plaza diseñada por Bernini abraza un espacio para 300.000 personas.",lat:41.9022225,lng:12.4567283},
+    {time:"10:00",title:"Ingreso — Basílica de San Pedro",address:"Basilica Papale di San Pietro",notes:"Entrada gratuita. El templo católico más grande del mundo: 218m de largo, cúpula de 136m diseñada por Miguel Ángel.",lat:41.9022225,lng:12.4567283},
+    {time:"10:10",title:"Subida a la Cúpula",address:"Acceso desde el interior de la Basílica",notes:"€10 con ascensor / €8 por escalera. Se paga en el lugar, no se reserva online. Vista incomparable sobre Roma y el Vaticano.",lat:41.9022225,lng:12.4567283},
+    {time:"10:50",title:"Recorrido interior + La Piedad",address:"Basilica di San Pietro, Vaticano",notes:"La Piedad de Miguel Ángel, el Baldaquino de Bernini (29m de bronce) y el altar papal exactamente sobre la tumba de San Pedro.",lat:41.9022225,lng:12.4567283},
+    {time:"12:00",title:"Ángelus con el Papa",address:"Palacio Apostólico — ventana papal",notes:"Ubicarse 15-20 min antes frente al Palacio Apostólico. Tradición dominical: bendición Urbi et Orbi con peregrinos de 150 países. Llevar banderas argentinas.",lat:41.9024,lng:12.4571},
+    {time:"12:45",title:"Almuerzo — Borgo Pio",address:"Borgo Pio, Roma",notes:"Calle medieval donde los empleados del Vaticano almuerzan hace siglos. Da Marcello → clásica romana. Arlu → más cuidado.",lat:41.9037914,lng:12.4603491},
+    {time:"14:00",title:"Castel Sant'Angelo + regreso al depto",address:"Lungotevere Castello 50, Roma",notes:"Mausoleo de Adriano (123 d.C.), puente con diez ángeles de Bernini. Exterior solamente. Después: Metro Línea A desde Lepanto hasta Termini.",lat:41.9030632,lng:12.466276},
+    {time:"18:30",title:"Piazza di Spagna + Escalinata",address:"Piazza di Spagna, Roma",notes:"Metro Línea A: Termini → Spagna (5 min). La escalinata de Trinità dei Monti (138 escalones de 1725) y la Fontana della Barcaccia de Bernini al pie.",lat:41.9056978,lng:12.482327},
+    {time:"19:15",title:"Via dei Condotti",address:"Via dei Condotti, Roma",notes:"La calle de lujo más famosa de Italia: Gucci, Prada, Louis Vuitton, Bulgari, Hermès. La arquitectura y los escaparates valen el paseo.",lat:41.9051584,lng:12.4805097},
+    {time:"20:30",title:"Llegada sorpresa — Fontana di Trevi",address:"Piazza di Trevi, Roma",notes:"Meterse por calles internas (Via delle Muratte / Via del Tritone) para llegar sin verla hasta el último momento. De noche: mucha menos gente, iluminación espectacular. Moneda con la mano derecha sobre el hombro izquierdo.",lat:41.9009325,lng:12.4833130},
+    {time:"21:00",title:"Cena cerca de Trevi",address:"Centro histórico, Roma",notes:"Settimio all'Arancio (Via dell'Arancio 50) → clientela local, poco turístico. Cavalier Gino (Vicolo Rosini 4) → pequeña y auténtica.",lat:41.9024,lng:12.4775},
+    {time:"22:15",title:"Helado nocturno",address:"Zona centro histórico",notes:"Fatamorgana (Via Laurina) → combinaciones artesanales únicas. Giolitti → clásico histórico.",lat:41.9038,lng:12.4793}
+  ]},
+  {id:3,date:"Lun 20/7",title:"Roma Imperial",subtitle:"Sta. Maria Maggiore + Monti + Vittoriano + Coliseo + Foro",color:"#B17A4E",special:true,
+   banner:"🎟️ Entradas al Coliseo YA CONFIRMADAS para las 16:00 hs. Llevar agua, gorra y protector solar — julio es muy caluroso. Mañana: tumba del Papa Francisco y Monti. Tarde-noche: Vittoriano, Coliseo y Foro.",
+   stops:[
+    {time:"09:30",title:"Santa Maria Maggiore — Tumba del Papa Francisco",address:"Piazza di Santa Maria Maggiore, Roma",notes:"15 min caminando del depto. Basílica del siglo V, Patrimonio UNESCO. La tumba de Francisco: lápida de mármol blanco con solo la inscripción 'Franciscus', junto a la Capilla Paulina. Entrada gratuita.",lat:41.8975986,lng:12.4984084,special:true},
+    {time:"10:30",title:"Mañana libre en Monti",address:"Piazza della Madonna dei Monti, Roma",notes:"10 min caminando bajando por Via Cavour. De día, Monti tiene boutiques de diseñadores jóvenes, talleres artesanales y cafés tranquilos. Almorzar en Ai Tre Scalini (Via dei Quattro Cantoni 30).",lat:41.8948378,lng:12.4910085},
+    {time:"14:00",title:"Vittoriano — Altar de la Patria",address:"Piazza Venezia, Roma",notes:"15 min caminando por Via dei Fori Imperiali, con 2.000 años de historia a los costados. Entrada libre, terraza con la mejor vista panorámica gratuita de Roma.",lat:41.894891,lng:12.4829541},
+    {time:"15:45",title:"Llegada — Entrada Coliseo",address:"Piazza del Colosseo 1, Roma",notes:"Llegar 15 min antes del horario reservado (16:00). Agua, gorra y protección solar imprescindibles.",lat:41.8902102,lng:12.4922309,special:true},
+    {time:"16:00",title:"Coliseo",address:"Piazza del Colosseo 1, Roma",notes:"El mayor anfiteatro del mundo antiguo, inaugurado en el año 80 d.C. Capacidad para 50.000-80.000 espectadores. Visita de 75-90 min, luego salida directa al Foro con el mismo ticket.",lat:41.8902102,lng:12.4922309,special:true},
+    {time:"17:30",title:"Foro Romano y Palatino",address:"Via Sacra, Roma",notes:"El corazón político y religioso de la civilización occidental. Última entrada 18:15, cierre 19:15 — priorizar Vía Sacra, Arco de Tito, Templo de Saturno y la vista desde el Palatino.",lat:41.8920906,lng:12.4864378},
+    {time:"19:00",title:"Regreso al departamento",address:"Via del Castro Pretorio 24, Roma",notes:"Bus 51 o 85 desde Piazza Venezia hasta Via Nazionale (5 min), luego 10 min caminando. Día largo — momento de descansar.",lat:41.9016375,lng:12.5053},
+    {time:"20:30",title:"Cena",address:"Cerca del depto o en Monti",notes:"La Carbonara (Via Panisperna, Monti) → histórica, más de 120 años, conviene reservar.",lat:41.8980,lng:12.4920}
+  ]},
+  {id:4,date:"Mar 21/7",title:"Trastevere + Shopping",subtitle:"Mercados auténticos + Panteón + Condotti + Corso + Prati",color:"#7D9474",
+   banner:"🛍️ JULIO = REBAJAS DE VERANO en toda Italia. Mañana: Trastevere, Campo de' Fiori y Panteón. Tarde: shopping completo desde Spagna hasta Prati.",
+   stops:[
+    {time:"08:30",title:"Salida hacia Trastevere",address:"Via del Castro Pretorio 24 → Trastevere",notes:"Taxi maxi XL para los 5 (15-20 min). El metro no tiene parada directa en el barrio.",lat:41.8875484,lng:12.4697657},
+    {time:"09:00",title:"Mercato di San Cosimato",address:"Piazza di San Cosimato, Trastevere",notes:"Mercado de barrio auténtico, mucho menos turístico que Campo de' Fiori. Abre 6:30-14:30. Después, paseo libre por las callecitas de Trastevere.",lat:41.8875484,lng:12.4697657},
+    {time:"10:30",title:"Cruce — Ponte Sisto",address:"Ponte Sisto, Roma",notes:"Puente romano del siglo IV con una de las mejores vistas del Tíber. 10-15 min caminando hasta Campo de' Fiori.",lat:41.8923371,lng:12.470707},
+    {time:"11:00",title:"Campo de' Fiori",address:"Piazza Campo de' Fiori, Roma",notes:"Mercado de flores y verduras desde 1869. Estatua de Giordano Bruno, quemado vivo en esta plaza en 1600. Abre 7:00-14:00.",lat:41.8956045,lng:12.4721757},
+    {time:"12:00",title:"Panteón",address:"Piazza della Rotonda, Roma",notes:"8 min caminando. El templo romano mejor conservado del mundo (126 d.C.). Cúpula de 43m de diámetro, récord mundial. Entrada gratuita entre semana.",lat:41.8986108,lng:12.4768729},
+    {time:"13:00",title:"Almuerzo cerca del Panteón",address:"Piazza della Rotonda y alrededores",notes:"Pausa antes de cruzar hacia la zona de shopping.",lat:41.8986,lng:12.4769},
+    {time:"14:15",title:"Via dei Condotti",address:"Via dei Condotti, Roma",notes:"12-15 min caminando desde el Panteón. La zona de moda más exclusiva de Roma: Gucci, Prada, Bulgari, Hermès.",lat:41.9051584,lng:12.4805097},
+    {time:"16:30",title:"Via del Corso",address:"Via del Corso, Roma",notes:"La calle comercial más larga de Roma: Zara, H&M, Mango, Nike, Sephora. No perderse la Galleria Alberto Sordi.",lat:41.9038,lng:12.4793},
+    {time:"18:15",title:"Prati — Via Cola di Rienzo",address:"Via Cola di Rienzo, Prati, Roma",notes:"Metro Línea A: Spagna → Ottaviano (4 min) + 5 min caminando. El equivalente al Corso pero para los romanos de verdad: MaxMara, Liu Jo, Coin Excelsior.",lat:41.9079743,lng:12.465208},
+    {time:"20:30",title:"Cena — última noche en Roma",address:"Cerca del depto o en Monti",notes:"Cena tranquila para cerrar cuatro días extraordinarios. Metro Línea A desde Ottaviano → Termini (12 min) o taxi maxi XL.",lat:41.9016,lng:12.5053}
+  ]},
+  {id:5,date:"Mié 22/7",title:"Partida a Firenze",subtitle:"Tren desde Roma Tiburtina · 12:00 hs",color:"#A67C5B",
+   banner:"🚄 OJO CON LA ESTACIÓN: el tren a Firenze sale desde ROMA TIBURTINA, no desde Termini. Salir del depto a las 11:00 para llegar con margen.",
+   stops:[
+    {time:"Libre",title:"Último café romano",address:"Barrio Castro Pretorio / Termini",notes:"Café de pie en la barra — rápido, intenso y la mitad de precio que sentado. Último paseo o terminar de empacar sin apuro.",lat:41.9016,lng:12.5053},
+    {time:"11:00",title:"Salida hacia Termini",address:"Via del Castro Pretorio 24 → Roma Termini",notes:"10-12 min caminando. Para 5 con equipaje: taxi maxi XL (3-4 min).",lat:41.9012873,lng:12.5015756},
+    {time:"11:15",title:"Metro Línea B — Termini → Tiburtina",address:"Estación Termini → Tiburtina F.S.",notes:"5-7 min, 1,50€/persona, sin trasbordos. Tiburtina es la segunda gran estación de trenes de Roma — varios servicios de alta velocidad paran ahí antes de Termini.",lat:41.9109,lng:12.5306},
+    {time:"12:00",title:"Frecciarossa/Italo → Firenze",address:"Roma Tiburtina → Firenze Santa Maria Novella",notes:"1h25-1h35 sin paradas. Llegada entre 13:25 y 13:35. La estación de Firenze SMN queda a 5 min del Duomo. Próximo capítulo del viaje.",lat:41.9109,lng:12.5306,special:true}
+  ]}
+];
+
+const PRACTICAL=[
+  {title:"Transporte en Roma — para 5 personas",items:[
+    ["Metro","Línea A (roja): Termini → Vaticano, Spagna, Prati. Línea B (azul): Termini → Colosseo. Ticket: 1,50€/persona · Bono día: 7€."],
+    ["Taxi para 5","Un taxi estándar acepta MÁXIMO 4 pasajeros. Pedir siempre TAXI MAXI o XL en itTaxi o FREE NOW."],
+    ["Bus urbano","Misma tarifa que el metro. Útil para trayectos sin metro directo: 51/85, 40/64, 71, N2 nocturno."],
+    ["Leonardo Express","Fiumicino → Termini: 14€/persona o 40€ minigrupo. Cada 15 min, 32 min directo."],
+    ["Frecciarossa/Italo","Roma Tiburtina → Firenze: 1h25-1h35. trenitalia.com o italotreno.it."]
+  ]},
+  {title:"Qué reservar antes de viajar",items:[
+    ["Coliseo + Foro + Palatino — CONFIRMADO","ticketing.colosseo.it · 16:00 hs del 20/07. Última entrada Foro 18:15, cierre 19:15."],
+    ["Tren a Firenze","trenitalia.com o italotreno.it · Sale desde TIBURTINA, no Termini · 12:00 hs del 22/07."],
+    ["Tumba Papa Francisco","Sin reserva. Santa Maria Maggiore, abre 7:00-19:00, entrada libre."],
+    ["La Carbonara — Monti","Reservar con anticipación, suele llenarse."]
+  ]},
+  {title:"Restaurantes por día",items:[
+    ["Día 1 — Sáb","San Lorenzo: Pizzeria Mino (hasta 00:00) · Cantina & Cucina Luigi (hasta 1:00 AM)"],
+    ["Día 2 — Dom","Almuerzo: Da Marcello/Arlu (Borgo Pio). Cena: Settimio all'Arancio/Cavalier Gino. Helado: Fatamorgana/Giolitti"],
+    ["Día 3 — Lun","Almuerzo: Ai Tre Scalini (Monti). Cena: La Carbonara"],
+    ["Día 4 — Mar","Almuerzo cerca del Panteón. Cena: última noche en Roma"],
+    ["Día 5 — Mié","Último café romano antes del tren a Firenze"]
+  ]},
+  {title:"Ruta completa del viaje",items:[
+    ["Buenos Aires → París","Vuelo desde EZE"],
+    ["París → Londres","Eurostar, llegada St Pancras 15/7"],
+    ["Londres → Roma","BA, Heathrow 18:55 del 18/7 (Sáb)"],
+    ["Roma — 5 días","18/07 al 22/07 · Via del Castro Pretorio 24"],
+    ["Roma → Firenze","Frecciarossa 12:00 del 22/07 desde Tiburtina (Mié)"],
+    ["Firenze → Madrid","Cierre del viaje en Europa"]
+  ]}
+];
+
+// ── MAPA ────────────────────────────────────────────────────────────────────
+let map,layer;
+function initMap(){
+  map=L.map('map',{attributionControl:true,zoomControl:true}).setView([HOME.lat,HOME.lng],13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OSM'}).addTo(map);
+  layer=L.layerGroup().addTo(map);
+}
+function pin(h){return L.divIcon({html:h,className:'',iconSize:[26,26],iconAnchor:[13,13]});}
+function gmaps(fLat,fLng,tLat,tLng){
+  return `https://www.google.com/maps/dir/?api=1&origin=${fLat},${fLng}&destination=${tLat},${tLng}&travelmode=walking`;
+}
+
+// ── RENDER ──────────────────────────────────────────────────────────────────
+function renderDay(idx){
+  const day=DAYS[idx];
+  const dc=day.color;
+
+  document.documentElement.style.setProperty('--accent',dc);
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+
+  document.getElementById('day-content').innerHTML=`
+    <div class="day-label"><p>DÍA ${day.id} &nbsp;·&nbsp; ${day.date.toUpperCase()}</p></div>
+    <div class="day-title-block"><h2>${day.title}</h2></div>
+    ${day.subtitle?`<div class="day-subtitle"><p>${day.subtitle}</p></div>`:''}
+    <div class="banner">${day.banner}</div>`;
+
+  layer.clearLayers();
+  const pts=[[HOME.lat,HOME.lng]];
+  L.marker([HOME.lat,HOME.lng],{icon:pin('<div class="lmarker home">🏠</div>')})
+    .addTo(layer).bindPopup(`<b>${HOME.name}</b>`);
+  day.stops.forEach((s,i)=>{
+    const m=L.marker([s.lat,s.lng],{icon:pin(`<div class="lmarker" style="background:${dc}">${i+1}</div>`)}).addTo(layer);
+    const prev=i===0?HOME:day.stops[i-1];
+    m.bindPopup(`<b>${s.time} · ${s.title}</b><br>${s.address}<br><a href="${gmaps(prev.lat,prev.lng,s.lat,s.lng)}" target="_blank">Cómo llegar →</a>`);
+    pts.push([s.lat,s.lng]);
+  });
+  L.polyline(pts,{color:dc,weight:3,dashArray:'6,8',opacity:.85}).addTo(layer);
+  map.fitBounds(L.latLngBounds(pts),{padding:[24,24]});
+
+  const sch=document.getElementById('schedule');
+  sch.innerHTML='';
+  day.stops.forEach((s,i)=>{
+    const prev=i===0?HOME:day.stops[i-1];
+    const prevName=i===0?'el departamento':`parada ${i}`;
+    const el=document.createElement('div');
+    el.className='stop'+(s.special?' special':'');
+    el.innerHTML=`
+      <div class="stop-header">
+        <div class="stop-num">${i+1}</div>
+        <div class="stop-meta">
+          <div class="stop-time">${s.time}</div>
+          <div class="stop-title">${s.title.replace(/—/g,'&mdash;')}${s.special?' <span class="sparkle">✨</span>':''}</div>
+          <div class="stop-addr">${s.address}</div>
+        </div>
+      </div>
+      <div class="stop-notes">${s.notes}</div>
+      <div class="stop-footer">
+        <a class="btn-go" href="${gmaps(prev.lat,prev.lng,s.lat,s.lng)}" target="_blank">🧭 Desde ${prevName}</a>
+      </div>`;
+    sch.appendChild(el);
+  });
+
+  // Practical info solo en el último día
+  const prac=document.getElementById('practical');
+  if(idx===DAYS.length-1){
+    prac.innerHTML=`<div class="practical-title"><p>Información práctica</p></div><div class="tips">`+
+      PRACTICAL.map(sec=>`
+        <div class="tip-item">
+          <div class="tip-title">${sec.title}</div>
+          ${sec.items.map(([l,b])=>`<div class="tip-text"><b>${l}:</b> ${b}</div>`).join('')}
+        </div>
+        <hr class="tip-divider">`).join('')
+      +`</div>`;
+  } else {
+    prac.innerHTML='';
+  }
+}
+
+function buildTabs(){
+  const te=document.getElementById('tabs');
+  DAYS.forEach((d,i)=>{
+    const b=document.createElement('button');
+    b.className='tab'+(i===0?' active':'');
+    b.style.setProperty('--tab-color',d.color);
+    b.innerHTML=`<span class="num">${d.id}</span> ${d.date}${d.special?' ✨':''}`;
+    b.addEventListener('click',()=>renderDay(i));
+    te.appendChild(b);
+  });
+}
+
+initMap();
+buildTabs();
+renderDay(0);
+
+</script>
+</body>
+</html>
